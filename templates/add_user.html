@@ -1,14 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Add User</title>
-</head>
-<body>
-    <h2>Add User</h2>
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5" style="max-width: 500px;">
+    <h2>Add New User</h2>
     <form method="POST">
-        Name: <input type="text" name="name"><br>
-        Email: <input type="email" name="email"><br>
-        <input type="submit" value="Add">
+        <div class="mb-3">
+            <label>Name</label>
+            <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control" required>
+        </div>
+        <button class="btn btn-success">Add User</button>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}
