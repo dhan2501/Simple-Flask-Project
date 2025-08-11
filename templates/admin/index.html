@@ -1,0 +1,13 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+    <div class="container mt-3">
+        {% if session.get('admin_logged_in') %}
+            <a href="{{ url_for('logout') }}" class="btn btn-danger float-right">Logout</a>
+        {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-primary float-right">Login</a>
+        {% endif %}
+        <h2>Welcome to Admin Panel</h2>
+        <p>Use the menu above to manage data.</p>
+    </div>
+{% endblock %}

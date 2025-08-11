@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
-from flask_admin import Admin
+from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -41,6 +41,13 @@ class AdminUser(db.Model):
 
 # Secure Flask-Admin view
 class SecureModelView(ModelView):
+    def is_accessible(self):
+        return session.get("admin_logged_in")
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for("login"))
+
+# Custom AdminIndexView with login/logout in template
+class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
         return session.get("admin_logged_in")
     def inaccessible_callback(self, name, **kwargs):
@@ -89,11 +96,9 @@ def register():
         username = request.form["username"]
         password = request.form["password"]
 
-        # Check if username already exists
         if AdminUser.query.filter_by(username=username).first():
             return render_template("register.html", error="Username already exists")
 
-        # Hash password and save
         hashed_password = generate_password_hash(password)
         new_admin = AdminUser(username=username, password_hash=hashed_password)
         db.session.add(new_admin)
@@ -150,10 +155,15 @@ class BannerAdmin(ModelView):
 
 
 # Flask-Admin setup
-admin_panel = Admin(app, name="Admin Panel", template_mode="bootstrap3")
+admin_panel = Admin(
+    app,
+    name="Admin Panel",
+    template_mode="bootstrap3",
+    index_view=MyAdminIndexView(template="admin/index.html")  # Custom template
+)
 admin_panel.add_view(SecureModelView(User, db.session))
 admin_panel.add_view(BannerAdmin(Banner, db.session))
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()  # Create tables if not exist
+        db.create_all()
     app.run(debug=True)
