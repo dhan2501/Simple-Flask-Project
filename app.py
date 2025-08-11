@@ -12,6 +12,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'supersecretkey'  # Needed for Flask sessions
 
 db = SQLAlchemy(app)
+import os
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static/uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB limit
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
 
 # User table (for demo content)
 class User(db.Model):
@@ -37,8 +49,9 @@ class SecureModelView(ModelView):
 # Home page
 @app.route("/")
 def home():
+    banner = Banner.query.first()
     users = User.query.all()
-    return render_template("index.html", users=users)
+    return render_template("index.html", users=users, banner=banner)
 
 # Add user form
 @app.route("/add", methods=["GET", "POST"])
@@ -96,10 +109,50 @@ def logout():
     session.pop("admin_logged_in", None)
     return redirect(url_for("login"))
 
+
+class Banner(db.Model):
+    __tablename__ = 'banners'
+    id = db.Column(db.Integer, primary_key=True)
+    image_url = db.Column(db.String(255), nullable=False)  # stores path like 'uploads/image.jpg'
+    heading = db.Column(db.String(255), nullable=False)
+    text = db.Column(db.Text)
+    button_text = db.Column(db.String(100))
+    button_link = db.Column(db.String(255))
+
+from flask_admin.form import FileUploadField
+from werkzeug.utils import secure_filename
+from wtforms import validators
+class BannerAdmin(ModelView):
+    form_overrides = {
+        'image_url': FileUploadField
+    }
+    
+    form_args = {
+        'image_url': {
+            'label': 'Banner Image',
+            'base_path': UPLOAD_FOLDER,
+            'allow_overwrite': False,
+            'validators': [validators.DataRequired()]
+        }
+    }
+
+    def _list_thumbnail(view, context, model, name):
+        if not model.image_url:
+            return ''
+        return f'<img src="/static/uploads/{model.image_url}" style="max-height: 100px;">'
+
+    column_formatters = {
+        'image_url': _list_thumbnail
+    }
+    column_formatters_detail = column_formatters
+
+
+
+
 # Flask-Admin setup
 admin_panel = Admin(app, name="Admin Panel", template_mode="bootstrap3")
 admin_panel.add_view(SecureModelView(User, db.session))
-
+admin_panel.add_view(BannerAdmin(Banner, db.session))
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()  # Create tables if not exist

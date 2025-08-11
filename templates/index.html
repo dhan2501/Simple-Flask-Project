@@ -1,7 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="banner">
-    <h1>Welcome to Our Website</h1>
+<div class="banner text-center" 
+     style="background: url('/static/uploads/{{ banner.image_url }}') no-repeat center/cover; 
+            padding: 100px 0; 
+            color: white;">
+    <h1>{{ banner.heading }}</h1>
+    <p>{{ banner.text }}</p>
+    {% if banner.button_text and banner.button_link %}
+        <a href="{{ banner.button_link }}" class="btn btn-primary">{{ banner.button_text }}</a>
+    {% endif %}
 </div>
 <div class="container py-5">
     <h2>User List</h2>
